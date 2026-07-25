@@ -24,7 +24,6 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 
-import org.mapstruct.ap.internal.gem.BuilderGem;
 import org.mapstruct.ap.internal.gem.DecoratedWithGem;
 import org.mapstruct.ap.internal.gem.InheritConfigurationGem;
 import org.mapstruct.ap.internal.gem.InheritInverseConfigurationGem;
@@ -33,6 +32,7 @@ import org.mapstruct.ap.internal.gem.MapperGem;
 import org.mapstruct.ap.internal.gem.MappingInheritanceStrategyGem;
 import org.mapstruct.ap.internal.gem.NullValueMappingStrategyGem;
 import org.mapstruct.ap.internal.model.AdditionalAnnotationsBuilder;
+import org.mapstruct.ap.internal.model.Annotation;
 import org.mapstruct.ap.internal.model.BeanMappingMethod;
 import org.mapstruct.ap.internal.model.ContainerMappingMethod;
 import org.mapstruct.ap.internal.model.ContainerMappingMethodBuilder;
@@ -119,7 +119,9 @@ public class MapperCreationProcessor implements ModelElementProcessor<List<Sourc
             elementUtils,
             typeUtils,
             messager,
+            versionInformation,
             accessorNaming,
+            context.getNullabilityResolver(),
             context.getEnumMappingStrategy(),
             context.getEnumTransformationStrategies(),
             options,
@@ -215,6 +217,7 @@ public class MapperCreationProcessor implements ModelElementProcessor<List<Sourc
             .suppressGeneratorTimestamp( mapperOptions.suppressTimestampInGenerated() )
             .additionalAnnotations( additionalAnnotationsBuilder.getProcessedAnnotations( element ) )
             .javadoc( getJavadoc( element ) )
+            .classAccessibility( mapperOptions.accessibility() )
             .build();
 
         if ( !mappingContext.getForgedMethodsUnderCreation().isEmpty() ) {
@@ -287,6 +290,9 @@ public class MapperCreationProcessor implements ModelElementProcessor<List<Sourc
             messager.printMessage( element, decoratedWith.mirror(), Message.DECORATOR_CONSTRUCTOR );
         }
 
+        // Get annotations from the decorator class
+        Set<Annotation> decoratorAnnotations = additionalAnnotationsBuilder.getProcessedAnnotations( decoratorElement );
+
         Decorator decorator = new Decorator.Builder()
             .elementUtils( elementUtils )
             .typeFactory( typeFactory )
@@ -300,6 +306,7 @@ public class MapperCreationProcessor implements ModelElementProcessor<List<Sourc
             .implPackage( mapperOptions.implementationPackage() )
             .extraImports( getExtraImports( element, mapperOptions ) )
             .suppressGeneratorTimestamp( mapperOptions.suppressTimestampInGenerated() )
+            .additionalAnnotations( decoratorAnnotations )
             .build();
 
         return decorator;
@@ -415,15 +422,10 @@ public class MapperCreationProcessor implements ModelElementProcessor<List<Sourc
             }
             else {
                 this.messager.note( 1, Message.BEANMAPPING_CREATE_NOTE, method );
-                BuilderGem builder = method.getOptions().getBeanMapping().getBuilder();
-                Type userDefinedReturnType = getUserDesiredReturnType( method );
-                Type builderBaseType = userDefinedReturnType != null ? userDefinedReturnType : method.getReturnType();
                 BeanMappingMethod.Builder beanMappingBuilder = new BeanMappingMethod.Builder();
                 BeanMappingMethod beanMappingMethod = beanMappingBuilder
                     .mappingContext( mappingContext )
                     .sourceMethod( method )
-                    .userDefinedReturnType( userDefinedReturnType )
-                    .returnTypeBuilder( typeFactory.builderTypeFor( builderBaseType, builder ) )
                     .build();
 
                 // We can consider that the bean mapping method can always be constructed. If there is a problem
@@ -459,14 +461,6 @@ public class MapperCreationProcessor implements ModelElementProcessor<List<Sourc
                 .build();
 
         return javadoc;
-    }
-
-    private Type getUserDesiredReturnType(SourceMethod method) {
-        SelectionParameters selectionParameters = method.getOptions().getBeanMapping().getSelectionParameters();
-        if ( selectionParameters != null && selectionParameters.getResultType() != null ) {
-            return typeFactory.getType( selectionParameters.getResultType() );
-        }
-        return null;
     }
 
     private <M extends ContainerMappingMethod> M createWithElementMappingMethod(SourceMethod method,

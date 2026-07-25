@@ -9,7 +9,6 @@
 <#list annotations as annotation>
     <#nt><@includeModel object=annotation/>
 </#list>
-<#if overridden>@Override</#if>
 <#lt>${accessibility.keyword} <@includeModel object=returnType /> ${name}(<#list parameters as param><@includeModel object=param/><#if param_has_next>, </#if></#list>)<@throws/> {
     <#list beforeMappingReferencesWithoutMappingTarget as callback>
     	<@includeModel object=callback targetBeanName=resultName targetType=resultType/>
@@ -17,6 +16,7 @@
 
     	</#if>
     </#list>
+    <#if sourceParameterPresenceCheck??>
     if ( <@includeModel object=sourceParameterPresenceCheck.negate() /> ) {
         <#if !mapNullToDefault>
             return<#if returnType.name != "void"> <#if existingInstanceMapping>${resultName}<#else>null</#if></#if>;
@@ -29,6 +29,7 @@
             </#if>
         </#if>
     }
+    </#if>
 
     <#if existingInstanceMapping>
         ${resultName}.clear();

@@ -109,6 +109,14 @@ public interface CarMapper {
 
 * Between `java.time.LocalDateTime` from Java 8 Date-Time package and `java.time.LocalDate` from the same package.
 
+* Between `java.time.ZonedDateTime` from Java 8 Date-Time package and `java.time.LocalDateTime` from the same package.
+
+* Between `java.time.OffsetDateTime` from Java 8 Date-Time package and `java.time.LocalDateTime` from the same package.
+
+* Between `java.time.ZonedDateTime` from Java 8 Date-Time package and `java.time.Instant` from the same package.
+
+* Between `java.time.OffsetDateTime` from Java 8 Date-Time package and `java.time.Instant` from the same package.
+
 * Between `java.time.ZonedDateTime` from Java 8 Date-Time package and `java.util.Calendar`.
 
 * Between `java.sql.Date` and `java.util.Date`
@@ -127,11 +135,22 @@ public interface CarMapper {
 
 * Between `String` and `StringBuilder`
 
+* Between `java.net.URI` and `String`.
+** When converting from a `String`, the value needs to be a valid https://datatracker.ietf.org/doc/html/rfc2396[RFC 2396 URI] otherwise an `IllegalArgumentException` is thrown.
+
 * Between `java.net.URL` and `String`.
 ** When converting from a `String`, the value needs to be a valid https://en.wikipedia.org/wiki/URL[URL] otherwise a `MalformedURLException` is thrown.
 
 * Between `java.util.Locale` and `String`.
 ** When converting from a `Locale`, the resulting `String` will be a well-formed IETF BCP 47 language tag representing the locale. When converting from a `String`, the locale that best represents the language tag will be returned. See https://docs.oracle.com/javase/8/docs/api/java/util/Locale.html#forLanguageTag-java.lang.String-[Locale.forLanguageTag()] and https://docs.oracle.com/javase/8/docs/api/java/util/Locale.html#toLanguageTag--[Locale.toLanguageTag()] for more information.
+
+[NOTE]
+====
+All the above conversions also work when the source or target type is wrapped in `java.util.Optional`, `java.util.OptionalDouble`, `java.util.OptionalLong` or `java.util.OptionalInt`.
+For example, `Optional<Integer>` can be converted to `String`, `int` can be converted to `Optional<String>`,
+or `Optional<Long>` can be converted to `Integer`.
+The same conversion rules apply, with MapStruct automatically handling the wrapping and unwrapping of `Optional` values.
+====
 
 [[mapping-object-references]]
 === Mapping object references
@@ -278,6 +297,13 @@ MapStruct will perform a null check on each nested property in the source.
 Instead of configuring everything via the parent method we encourage users to explicitly write their own nested methods.
 This puts the configuration of the nested mapping into one place (method) where it can be reused from several methods in the upper level,
 instead of re-configuring the same things on all of those upper methods.
+====
+
+[TIP]
+====
+When ignoring multiple properties instead of defining multiple `@Mapping` annotations, you can use the `@Ignored` annotation to group them together.
+e.g. for the `FishTankMapperWithDocument` example above, you could write:
+`@Ignored(targets = { "plant", "ornament", "material" })`
 ====
 
 [NOTE]

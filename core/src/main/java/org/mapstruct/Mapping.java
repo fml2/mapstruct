@@ -118,7 +118,7 @@ import static org.mapstruct.NullValueCheckStrategy.ON_IMPLICIT_CONVERSION;
  * // we can use {@link #defaultValue()} or {@link #defaultExpression()} for it
  * &#64;Mapper
  * public interface HumanMapper {
- *    &#64;Mapping(source="name", target="name", defaultValue="Somebody")
+ *    &#64;Mapping(source="name", target="fullName", defaultValue="Somebody")
  *    HumanDto toHumanDto(Human human)
  * }
  * </code></pre>
@@ -230,7 +230,6 @@ public @interface Mapping {
      * <p>
      * MapStruct handles the constant as {@code String}. The value will be converted by applying a matching method,
      * type conversion method or built-in conversion.
-     * <p>
      * </li>
      * </ol>
      * <p>
@@ -306,6 +305,9 @@ public @interface Mapping {
      * This can be useful when certain attributes should not be propagated from source to target or when properties in
      * the target object are populated using a decorator and thus would be reported as unmapped target property by
      * default.
+     * <p>
+     * If you have multiple properties to ignore,
+     * you can use the {@link Ignored} annotation instead and group them all at once.
      *
      * @return {@code true} if the given property should be ignored, {@code false} otherwise
      */
@@ -443,13 +445,11 @@ public @interface Mapping {
      * If not possible, MapStruct will try to apply a user defined mapping method.
      * </li>
      * </ul>
-     * <p>
      * </li>
      * <li>other
      * <p>
      * MapStruct handles the constant as {@code String}. The value will be converted by applying a matching method,
      * type conversion method or built-in conversion.
-     * <p>
      * </li>
      * </ol>
      * <p>

@@ -17,6 +17,8 @@ import org.mapstruct.ap.internal.model.common.TypeFactory;
 import org.mapstruct.ap.internal.option.Options;
 import org.mapstruct.ap.internal.version.VersionInformation;
 
+import static org.mapstruct.ap.internal.gem.ClassAccessibilityGem.DEFAULT;
+
 /**
  * Represents a type implementing a mapper interface (annotated with {@code @Mapper}). This is the root object of the
  * mapper model.
@@ -109,6 +111,10 @@ public class Mapper extends GeneratedType {
 
             Type definitionType = typeFactory.getType( element );
 
+            Accessibility accessibility =
+                classAccessibility == DEFAULT ? Accessibility.fromModifiers( element.getModifiers() ) :
+                    Accessibility.valueOf( classAccessibility.name() );
+
             return new Mapper(
                 typeFactory,
                 packageName,
@@ -121,7 +127,7 @@ public class Mapper extends GeneratedType {
                 options,
                 versionInformation,
                 suppressGeneratorTimestamp,
-                Accessibility.fromModifiers( element.getModifiers() ),
+                accessibility,
                 fields,
                 constructor,
                 decorator,
@@ -199,12 +205,12 @@ public class Mapper extends GeneratedType {
      * @return the flat name for the type element
      */
     public static String getFlatName(TypeElement element) {
-        if (!(element.getEnclosingElement() instanceof TypeElement)) {
+        if ( !(element.getEnclosingElement() instanceof TypeElement) ) {
             return element.getSimpleName().toString();
         }
         StringBuilder nameBuilder = new StringBuilder( element.getSimpleName().toString() );
-        for (Element enclosing = element.getEnclosingElement(); enclosing instanceof TypeElement; enclosing =
-                enclosing.getEnclosingElement()) {
+        for ( Element enclosing = element.getEnclosingElement(); enclosing instanceof TypeElement; enclosing =
+                enclosing.getEnclosingElement() ) {
             nameBuilder.insert( 0, '$' );
             nameBuilder.insert( 0, enclosing.getSimpleName().toString() );
         }

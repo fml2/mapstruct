@@ -45,6 +45,7 @@ import org.mapstruct.ap.internal.util.Collections;
 import org.mapstruct.ap.internal.util.ElementUtils;
 import org.mapstruct.ap.internal.util.Extractor;
 import org.mapstruct.ap.internal.util.FormattingMessager;
+import org.mapstruct.ap.internal.util.JavaCollectionConstants;
 import org.mapstruct.ap.internal.util.JavaStreamConstants;
 import org.mapstruct.ap.internal.util.Message;
 import org.mapstruct.ap.internal.util.NativeTypes;
@@ -148,6 +149,14 @@ public class TypeFactory {
         implementationTypes.put(
             ConcurrentNavigableMap.class.getName(),
             withDefaultConstructor( getType( ConcurrentSkipListMap.class ) )
+        );
+        implementationTypes.put(
+            JavaCollectionConstants.SEQUENCED_SET_FQN,
+            withFactoryMethod( getType( LinkedHashSet.class ), LINKED_HASH_SET_FACTORY_METHOD_NAME )
+        );
+        implementationTypes.put(
+            JavaCollectionConstants.SEQUENCED_MAP_FQN,
+            withFactoryMethod( getType( LinkedHashMap.class ), LINKED_HASH_MAP_FACTORY_METHOD_NAME )
         );
 
         this.loggingVerbose = loggingVerbose;
@@ -285,7 +294,7 @@ public class TypeFactory {
                 packageName = elementUtils.getPackageOf( componentTypeElement ).getQualifiedName().toString();
                 qualifiedName = componentTypeElement.getQualifiedName().toString() + arraySuffix;
             }
-            else if (componentTypeMirror.getKind().isPrimitive()) {
+            else if ( componentTypeMirror.getKind().isPrimitive() ) {
                 // When the component type is primitive and is annotated with ElementType.TYPE_USE then
                 // the typeMirror#toString returns (@CustomAnnotation :: byte) for the javac compiler
                 name = NativeTypes.getName( componentTypeMirror.getKind() ) + builder.toString();
@@ -488,7 +497,7 @@ public class TypeFactory {
     }
 
     public List<Type> getThrownTypes(Accessor accessor) {
-        if (accessor.getAccessorType().isFieldAssignment()) {
+        if ( accessor.getAccessorType().isFieldAssignment() ) {
             return new ArrayList<>();
         }
         Element element = accessor.getElement();
@@ -509,20 +518,20 @@ public class TypeFactory {
     }
 
     private List<Type> getTypeParameters(TypeMirror mirror, boolean isImplementationType) {
+        while ( mirror.getKind() == TypeKind.ARRAY ) {
+            mirror = getComponentType( mirror );
+        }
         if ( mirror.getKind() != TypeKind.DECLARED ) {
             return java.util.Collections.emptyList();
         }
 
         DeclaredType declaredType = (DeclaredType) mirror;
-        List<Type> typeParameters = new ArrayList<>( declaredType.getTypeArguments().size() );
+        List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
+        List<Type> typeParameters = new ArrayList<>( typeArguments.size() );
 
-        for ( TypeMirror typeParameter : declaredType.getTypeArguments() ) {
-            if ( isImplementationType ) {
-                typeParameters.add( getType( typeParameter ).getTypeBound() );
-            }
-            else {
-                typeParameters.add( getType( typeParameter ) );
-            }
+        for ( TypeMirror typeParameter : typeArguments ) {
+            Type type = getType( typeParameter );
+            typeParameters.add( isImplementationType ? type.getTypeBound() : type );
         }
 
         return typeParameters;

@@ -21,6 +21,10 @@ public interface VersionInformation {
 
     boolean isSourceVersionAtLeast9();
 
+    boolean isSourceVersionAtLeast11();
+
+    boolean isSourceVersionAtLeast14();
+
     boolean isSourceVersionAtLeast19();
 
     boolean isEclipseJDTCompiler();
